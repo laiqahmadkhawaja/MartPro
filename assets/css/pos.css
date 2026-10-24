@@ -1,0 +1,184 @@
+/**
+ * MartPro Advanced POS Dedicated Stylesheet
+ */
+
+.pos-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 64px);
+  background-color: var(--mp-bg);
+  overflow: hidden;
+}
+
+/* POS Header Bar */
+.pos-header-bar {
+  background: var(--mp-navy);
+  color: #FFFFFF;
+  padding: 0.6rem 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* POS Body Grid */
+.pos-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Left / Main Cart Panel */
+.pos-cart-panel {
+  flex: 1.4;
+  display: flex;
+  flex-direction: column;
+  background: #FFFFFF;
+  border-right: 1px solid var(--mp-border);
+  min-width: 0;
+}
+
+/* Cart Table Area */
+.pos-cart-table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.cart-item-row {
+  border-bottom: 1px solid var(--mp-border);
+  padding: 0.6rem 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.15s ease;
+}
+.cart-item-row:hover {
+  background-color: #F8FAFC;
+}
+.cart-item-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--mp-navy);
+  margin-bottom: 2px;
+}
+.cart-item-meta {
+  font-size: 0.8rem;
+  color: var(--mp-text-muted);
+}
+.qty-stepper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.qty-stepper .btn {
+  padding: 2px 8px;
+  font-weight: bold;
+}
+.qty-input {
+  width: 50px;
+  text-align: center;
+  font-weight: 600;
+  padding: 2px 4px;
+}
+
+/* Right / Checkout Totals & Quick Pay Panel */
+.pos-pay-panel {
+  flex: 1;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  background: #FAFCFE;
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+
+.pos-total-display {
+  background: var(--mp-navy);
+  color: #FFFFFF;
+  border-radius: 12px;
+  padding: 1.25rem;
+  text-align: right;
+  margin-bottom: 1rem;
+}
+.pos-total-label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--mp-bright-green);
+  font-weight: 700;
+}
+.pos-total-amount {
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #FFFFFF;
+  font-family: monospace, sans-serif;
+}
+
+.pos-summary-table {
+  width: 100%;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+.pos-summary-table td {
+  padding: 0.35rem 0;
+}
+
+/* Quick Pay Buttons Grid */
+.pos-tender-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+.btn-tender {
+  padding: 0.85rem;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 10px;
+}
+
+.quick-cash-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 1rem;
+}
+.quick-cash-chip {
+  padding: 6px 12px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  border-radius: 20px;
+  background: #E2E8F0;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.quick-cash-chip:hover {
+  background: var(--mp-primary);
+  color: #FFFFFF;
+}
+
+/* Mobile POS Layout adjustments */
+@media (max-width: 850px) {
+  .pos-container {
+    height: auto;
+    overflow-y: auto;
+  }
+  .pos-body {
+    flex-direction: column;
+    overflow: visible;
+  }
+  .pos-pay-panel {
+    max-width: 100%;
+    border-top: 2px solid var(--mp-border);
+  }
+}

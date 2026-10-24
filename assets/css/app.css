@@ -1,0 +1,260 @@
+/**
+ * MartPro Enterprise Retail POS & Store Management
+ * Core Application Stylesheet & Design System
+ */
+
+:root {
+  --mp-primary: #16A34A;
+  --mp-primary-hover: #15803D;
+  --mp-bright-green: #39E75F;
+  --mp-navy: #0F172A;
+  --mp-navy-secondary: #162338;
+  --mp-navy-hover: #1E293B;
+  --mp-bg: #F5F8FC;
+  --mp-card-bg: #FFFFFF;
+  --mp-border: #E2E8F0;
+  --mp-text-main: #0F172A;
+  --mp-text-muted: #64748B;
+  --mp-warning: #F59E0B;
+  --mp-danger: #DC2626;
+  --mp-info: #0284C7;
+  --mp-sidebar-width: 260px;
+  --mp-sidebar-collapsed-width: 70px;
+}
+
+[data-bs-theme="dark"] {
+  --mp-bg: #0B111E;
+  --mp-card-bg: #131D2F;
+  --mp-border: #22324B;
+  --mp-text-main: #F1F5F9;
+  --mp-text-muted: #94A3B8;
+  --mp-navy: #131D2F;
+  --mp-navy-secondary: #0A0F1A;
+}
+
+/* Base resets & typography */
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--mp-bg);
+  color: var(--mp-text-main);
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+a {
+  text-decoration: none;
+}
+
+/* Utility Colors */
+.text-navy { color: var(--mp-navy) !important; }
+.text-mp-primary { color: var(--mp-primary) !important; }
+.text-bright-green { color: var(--mp-bright-green) !important; }
+.bg-navy { background-color: var(--mp-navy) !important; color: #FFFFFF; }
+.bg-navy-secondary { background-color: var(--mp-navy-secondary) !important; color: #FFFFFF; }
+.bg-mp-primary { background-color: var(--mp-primary) !important; color: #FFFFFF; }
+
+/* Custom Buttons */
+.btn-primary {
+  background-color: var(--mp-primary);
+  border-color: var(--mp-primary);
+  color: #FFFFFF;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 0.5rem 1.1rem;
+  transition: all 0.2s ease-in-out;
+}
+.btn-primary:hover, .btn-primary:focus {
+  background-color: var(--mp-primary-hover);
+  border-color: var(--mp-primary-hover);
+  transform: translateY(-1px);
+}
+.btn-navy {
+  background-color: var(--mp-navy);
+  color: #FFFFFF;
+  font-weight: 600;
+  border-radius: 8px;
+}
+.btn-navy:hover {
+  background-color: var(--mp-navy-hover);
+  color: #FFFFFF;
+}
+
+/* Cards & Surfaces */
+.card {
+  background-color: var(--mp-card-bg);
+  border: 1px solid var(--mp-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  transition: box-shadow 0.2s ease;
+}
+.card:hover {
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+.card-header {
+  background-color: transparent;
+  border-bottom: 1px solid var(--mp-border);
+  padding: 1rem 1.25rem;
+  font-weight: 600;
+}
+
+/* Stat KPI Cards */
+.kpi-card {
+  border-left: 4px solid var(--mp-primary);
+  border-radius: 12px;
+}
+.kpi-card.kpi-warning { border-left-color: var(--mp-warning); }
+.kpi-card.kpi-danger { border-left-color: var(--mp-danger); }
+.kpi-card.kpi-info { border-left-color: var(--mp-info); }
+
+.kpi-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+/* Data Tables */
+.table {
+  color: var(--mp-text-main);
+  border-color: var(--mp-border);
+  vertical-align: middle;
+}
+.table > :not(caption) > * > * {
+  padding: 0.75rem 0.85rem;
+  background-color: transparent;
+}
+.table thead th {
+  background-color: rgba(15, 23, 42, 0.03);
+  color: var(--mp-text-muted);
+  font-weight: 600;
+  font-size: 0.825rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--mp-border);
+}
+
+/* Badges */
+.badge {
+  padding: 0.4em 0.7em;
+  font-weight: 600;
+  border-radius: 6px;
+}
+
+/* App Shell Layout */
+#app-wrapper {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+}
+
+#sidebar {
+  width: var(--mp-sidebar-width);
+  min-height: 100vh;
+  background-color: var(--mp-navy);
+  color: #94A3B8;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 1040;
+  transition: all 0.3s ease;
+  overflow-y: auto;
+}
+
+#main-content {
+  flex: 1;
+  margin-left: var(--mp-sidebar-width);
+  min-width: 0; /* Prevents flex children from blowing out */
+  display: flex;
+  flex-direction: column;
+  transition: margin-left 0.3s ease;
+}
+
+/* Sidebar Navigation */
+.sidebar-brand {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.nav-section-title {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #64748B;
+  padding: 0.75rem 1.5rem 0.25rem;
+  font-weight: 700;
+}
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  padding: 0.65rem 1.5rem;
+  color: #94A3B8;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
+}
+.sidebar-link i {
+  font-size: 1.2rem;
+  width: 26px;
+  margin-right: 10px;
+}
+.sidebar-link:hover {
+  color: #FFFFFF;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-left-color: var(--mp-bright-green);
+}
+.sidebar-link.active {
+  color: #FFFFFF;
+  background-color: rgba(22, 163, 74, 0.15);
+  border-left-color: var(--mp-bright-green);
+  font-weight: 600;
+}
+
+/* Top Navbar */
+.top-navbar {
+  height: 64px;
+  background-color: var(--mp-card-bg);
+  border-bottom: 1px solid var(--mp-border);
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+}
+
+/* Responsive Behavior */
+@media (max-width: 991.98px) {
+  #sidebar {
+    left: -100%;
+  }
+  #sidebar.show {
+    left: 0;
+  }
+  #main-content {
+    margin-left: 0;
+  }
+  .sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1030;
+  }
+}
+
+/* Custom Toast Alerts */
+#toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+}

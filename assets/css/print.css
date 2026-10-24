@@ -1,0 +1,73 @@
+/**
+ * MartPro Print Stylesheet
+ * Optimized for Thermal Receipt Printers (58mm / 80mm) & Standard Reports
+ */
+
+@media print {
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    font-family: 'Courier New', Courier, monospace, sans-serif !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Hide navigation, sidebar, headers, and buttons */
+  #sidebar, .top-navbar, .btn, .no-print, #toast-container, .modal-backdrop {
+    display: none !important;
+  }
+
+  #main-content {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* 80mm Thermal Receipt Spec */
+  .receipt-container-80mm {
+    width: 76mm;
+    max-width: 76mm;
+    margin: 0 auto;
+    padding: 4px;
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  /* 58mm Thermal Receipt Spec */
+  .receipt-container-58mm {
+    width: 52mm;
+    max-width: 52mm;
+    margin: 0 auto;
+    padding: 2px;
+    font-size: 10.5px;
+    line-height: 1.2;
+  }
+
+  .receipt-header, .receipt-footer {
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .receipt-divider {
+    border-top: 1px dashed #000000;
+    margin: 6px 0;
+  }
+
+  .receipt-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .receipt-table th, .receipt-table td {
+    padding: 2px 0;
+  }
+
+  .text-end {
+    text-align: right !important;
+  }
+  .text-center {
+    text-align: center !important;
+  }
+  .fw-bold {
+    font-weight: bold !important;
+  }
+}
