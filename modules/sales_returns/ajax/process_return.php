@@ -124,6 +124,7 @@ try {
         VALUES 
         (:rid, :si_id, :pid, :bid, :qty, :uprice, :ltot, :cond)");
 
+    $total_restocked_cogs = 0.0;
     foreach ($processed_items as $pi) {
         $item_ins->execute([
             'rid'    => $return_id,
@@ -138,6 +139,7 @@ try {
 
         // Restock into inventory only if Resalable!
         if ($pi['condition'] === 'resalable') {
+            $total_restocked_cogs += round($pi['qty'] * $pi['cost_price'], 2);
             record_stock_movement(
                 $pi['product_id'],
                 $store_id,
@@ -182,8 +184,9 @@ try {
     }
 
     // 6. Reverse Sales Revenue in Accounting
-    // Debit Sales Returns (4010), Credit Cash (1010)
-    $cr_account = ($refund_method === 'cash') ? get_account_id('1010') : get_account_id('1100');
+    // Debit Sales Returns (4010), Credit Cash/Bank/AR
+    $cr_account = ($refund_method === 'cash') ? get_account_id('1010') : 
+                  (($refund_method === 'customer_credit') ? get_account_id('1100') : get_account_id('1030'));
     $j_lines = [
         [
             'account_id' => get_account_id('4010'), // Sales Return / Revenue
@@ -199,6 +202,25 @@ try {
         ]
     ];
     post_journal_entry("Sales Return $return_number", $return_number, $j_lines);
+
+    // 7. Reverse COGS & Restock Inventory in GL if resalable goods restocked
+    if ($total_restocked_cogs > 0) {
+        $cogs_rev_lines = [
+            [
+                'account_id' => get_account_id('1200'), // Merchandise Inventory
+                'debit'      => $total_restocked_cogs,
+                'credit'     => 0,
+                'memo'       => "Inventory Restocked for Return #$return_number"
+            ],
+            [
+                'account_id' => get_account_id('5010'), // COGS
+                'debit'      => 0,
+                'credit'     => $total_restocked_cogs,
+                'memo'       => "COGS Reversal for Return #$return_number"
+            ]
+        ];
+        post_journal_entry("Restock COGS Return $return_number", $return_number, $cogs_rev_lines);
+    }
 
     audit_log('sales_return', 'pos', 'sale_return', (string)$return_id, null, [
         'return_number' => $return_number,

@@ -13,6 +13,7 @@ require_once __DIR__ . '/../../../includes/response.php';
 require_once __DIR__ . '/../../../includes/functions.php';
 require_once __DIR__ . '/../../../includes/numbering.php';
 require_once __DIR__ . '/../../../includes/inventory_helpers.php';
+require_once __DIR__ . '/../../../includes/accounting_helpers.php';
 require_once __DIR__ . '/../../../includes/audit.php';
 
 require_login();
@@ -145,7 +146,25 @@ try {
         'uid'   => $user_id
     ]);
 
-    // 7. Mark PO fulfilled if linked
+    // 7. Post Balanced Inventory Receipt Accounting:
+    // Debit 1200 (Merchandise Inventory), Credit 2010 (Accounts Payable)
+    $grn_lines = [
+        [
+            'account_id' => get_account_id('1200'),
+            'debit'      => $line_total,
+            'credit'     => 0,
+            'memo'       => "Stock received on GRN #$grn_number"
+        ],
+        [
+            'account_id' => get_account_id('2010'),
+            'debit'      => 0,
+            'credit'     => $line_total,
+            'memo'       => "AP liability to Supplier #$supplier_id on GRN #$grn_number"
+        ]
+    ];
+    post_journal_entry("Goods Receipt $grn_number", $grn_number, $grn_lines);
+
+    // 8. Mark PO fulfilled if linked
     if ($po_id) {
         $upd_po = $db->prepare("UPDATE purchase_orders SET status = 'received' WHERE id = :poid");
         $upd_po->execute(['poid' => $po_id]);

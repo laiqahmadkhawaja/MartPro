@@ -130,10 +130,12 @@ try {
             $unit_price = max(0.0, (float)$item['custom_price']);
         }
 
-        $line_subtotal = round($unit_price * $qty, 4);
+        $line_subtotal = round($unit_price * $qty, 2);
+        $line_discount = round((float)($item['discount'] ?? 0), 2);
+        $line_net = max(0.0, $line_subtotal - $line_discount);
         $tax_rate = (float)($product['tax_rate'] ?? 0);
-        $tax_amount = round(($line_subtotal - $line_discount) * ($tax_rate / 100.0), 4);
-        $line_total = round($line_subtotal - $line_discount + $tax_amount, 4);
+        $tax_amount = round($line_net * ($tax_rate / 100.0), 2);
+        $line_total = $line_net;
 
         // Allocate batches & cost snapshot
         $allocations = allocate_stock_batches($product_id, $store_id, $qty, $strategy);
@@ -264,6 +266,21 @@ try {
     }
     if ($paid_loyalty > 0) {
         $pay_insert->execute(['sid' => $sale_id, 'meth' => 'loyalty', 'amt' => $paid_loyalty, 'ref' => 'POINTS-REDEMPTION']);
+        if ($customer_id) {
+            $point_value = max(0.01, (float)get_setting('loyalty_point_value', '0.01'));
+            $points_deducted = (int)ceil($paid_loyalty / $point_value);
+            $upd_red = $db->prepare("UPDATE customers SET loyalty_points = GREATEST(0, loyalty_points - :pts) WHERE id = :id");
+            $upd_red->execute(['pts' => $points_deducted, 'id' => $customer_id]);
+
+            $pts_red_log = $db->prepare("INSERT INTO loyalty_transactions (customer_id, sale_id, type, points, notes, created_at)
+                                         VALUES (:cid, :sid, 'redeemed', :pts, :notes, NOW())");
+            $pts_red_log->execute([
+                'cid'   => $customer_id,
+                'sid'   => $sale_id,
+                'pts'   => -$points_deducted,
+                'notes' => "Points redeemed for Invoice #$invoice_number"
+            ]);
+        }
     }
 
     // 6. Update Customer Khata Ledger if credit was used
@@ -316,7 +333,8 @@ try {
         $net_cash_collected,
         $paid_card + $paid_wallet,
         $paid_credit,
-        $total_cogs
+        $total_cogs,
+        $paid_loyalty
     );
 
     // 9. Centralized Audit Log

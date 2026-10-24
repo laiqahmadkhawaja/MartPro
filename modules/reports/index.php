@@ -137,9 +137,10 @@ require_once __DIR__ . '/../../includes/header.php';
                         <?php 
                         $t_rev = 0; $t_cogs = 0; $t_gp = 0;
                         foreach ($sales_report as $sr): 
-                            $gp = (float)$sr['grand_total'] - (float)$sr['tax_total'] - (float)$sr['cogs_total'];
-                            $m_pct = ((float)$sr['grand_total'] > 0) ? ($gp / (float)$sr['grand_total']) * 100 : 0;
-                            $t_rev += (float)$sr['grand_total'];
+                            $net_sales = (float)$sr['subtotal'] - ((float)$sr['item_discount_total'] + (float)$sr['bill_discount_total']);
+                            $gp = $net_sales - (float)$sr['cogs_total'];
+                            $m_pct = ($net_sales > 0) ? ($gp / $net_sales) * 100 : 0;
+                            $t_rev += $net_sales;
                             $t_cogs += (float)$sr['cogs_total'];
                             $t_gp += $gp;
                         ?>

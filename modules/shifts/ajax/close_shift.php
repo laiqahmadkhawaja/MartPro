@@ -41,12 +41,11 @@ $cs_stmt = $db->prepare("SELECT COALESCE(SUM(sp.amount), 0)
 $cs_stmt->execute(['sid' => $shift_id]);
 $total_cash_sales = (float)$cs_stmt->fetchColumn();
 
-// Cash Refunds
-$cr_stmt = $db->prepare("SELECT COALESCE(SUM(sr.total_refund), 0)
-                         FROM sale_returns sr
-                         JOIN sales s ON sr.original_sale_id = s.id
-                         WHERE s.shift_id = :sid AND sr.refund_method = 'cash'");
-$cr_stmt->execute(['sid' => $shift_id]);
+// Cash Refunds from this register during this shift
+$cr_stmt = $db->prepare("SELECT COALESCE(SUM(total_refund), 0)
+                         FROM sale_returns
+                         WHERE register_id = :reg AND refund_method = 'cash' AND created_at >= :opened");
+$cr_stmt->execute(['reg' => $shift['register_id'], 'opened' => $shift['opened_at']]);
 $total_cash_refunds = (float)$cr_stmt->fetchColumn();
 
 // Cash Safe Drops from this register

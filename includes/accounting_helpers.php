@@ -80,7 +80,7 @@ function get_account_id(string $code): int {
 /**
  * Post accounting entries for a completed retail sale
  */
-function post_sale_accounting(int $sale_id, string $inv_num, float $subtotal, float $tax, float $paid_cash, float $paid_card, float $credit_khata, float $cogs): void {
+function post_sale_accounting(int $sale_id, string $inv_num, float $subtotal, float $tax, float $paid_cash, float $paid_card, float $credit_khata, float $cogs, float $paid_loyalty = 0.0): void {
     try {
         $lines = [];
         // 1. Cash received
@@ -110,14 +110,23 @@ function post_sale_accounting(int $sale_id, string $inv_num, float $subtotal, fl
                 'memo'       => "Customer credit for $inv_num"
             ];
         }
-        // 4. Sales Revenue
+        // 4. Loyalty Points Redeemed
+        if ($paid_loyalty > 0) {
+            $lines[] = [
+                'account_id' => get_account_id('4020'), // Sales Discounts & Promotions
+                'debit'      => $paid_loyalty,
+                'credit'     => 0,
+                'memo'       => "Loyalty points redeemed for $inv_num"
+            ];
+        }
+        // 5. Sales Revenue
         $lines[] = [
             'account_id' => get_account_id('4010'), // Sales Revenue
             'debit'      => 0,
             'credit'     => $subtotal,
             'memo'       => "Retail sales revenue for $inv_num"
         ];
-        // 5. Sales Tax Payable
+        // 6. Sales Tax Payable
         if ($tax > 0) {
             $lines[] = [
                 'account_id' => get_account_id('2020'), // Sales Tax Payable

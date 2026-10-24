@@ -46,8 +46,9 @@ $sales_stmt = $db->prepare("SELECT
 $sales_stmt->execute(['store' => $store_id, 'start_d' => $start_date, 'end_d' => $end_date]);
 $sales_kpi = $sales_stmt->fetch();
 
-$gross_profit = (float)$sales_kpi['total_sales'] - (float)$sales_kpi['total_tax'] - (float)$sales_kpi['total_cogs'];
-$margin_pct = ($sales_kpi['total_sales'] > 0) ? ($gross_profit / (float)$sales_kpi['total_sales']) * 100 : 0.0;
+$net_sales = max(0.0, (float)$sales_kpi['total_subtotal'] - (float)$sales_kpi['total_discounts']);
+$gross_profit = $net_sales - (float)$sales_kpi['total_cogs'];
+$margin_pct = ($net_sales > 0) ? ($gross_profit / $net_sales) * 100 : 0.0;
 $avg_basket = ($sales_kpi['total_orders'] > 0) ? (float)$sales_kpi['total_sales'] / (int)$sales_kpi['total_orders'] : 0.0;
 
 // 2. Outstanding Receivables (Khata) & Payables
