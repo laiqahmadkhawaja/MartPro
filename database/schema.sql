@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS `stores` (
     `email` VARCHAR(100) DEFAULT NULL,
     `address` TEXT DEFAULT NULL,
     `receipt_header` TEXT DEFAULT NULL,
-    `receipt_footer` TEXT DEFAULT 'Thank you for shopping at MartPro!',
+    `receipt_footer` VARCHAR(500) DEFAULT 'Thank you for shopping at MartPro!',
     `is_active` TINYINT(1) DEFAULT 1,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
