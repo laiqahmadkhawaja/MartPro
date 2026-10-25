@@ -10,6 +10,34 @@ $step = $_GET['step'] ?? 'check';
 $errors = [];
 $success_msg = '';
 
+// Helper to auto-create and verify storage write permissions
+function prepare_and_check_storage(): bool {
+    $storage_dir = __DIR__ . '/storage';
+    if (!is_dir($storage_dir)) {
+        @mkdir($storage_dir, 0777, true);
+    }
+    @chmod($storage_dir, 0777);
+
+    $subdirs = ['logs', 'exports', 'backups', 'temporary'];
+    foreach ($subdirs as $sub) {
+        $p = $storage_dir . '/' . $sub;
+        if (!is_dir($p)) {
+            @mkdir($p, 0777, true);
+        }
+        @chmod($p, 0777);
+    }
+
+    $test_file = $storage_dir . '/.write_test_' . uniqid();
+    $written = @file_put_contents($test_file, 'test');
+    if ($written !== false) {
+        @unlink($test_file);
+        return true;
+    }
+    return is_writable($storage_dir);
+}
+
+$storage_ok = prepare_and_check_storage();
+
 // Check PHP extensions & storage permissions
 $reqs = [
     'PHP Version >= 8.0' => version_compare(PHP_VERSION, '8.0.0', '>='),
@@ -17,7 +45,7 @@ $reqs = [
     'PDO MySQL Driver'   => extension_loaded('pdo_mysql'),
     'OpenSSL Extension'  => extension_loaded('openssl'),
     'JSON Extension'     => extension_loaded('json'),
-    'Storage Writable'   => is_writable(__DIR__ . '/storage')
+    'Storage Writable'   => $storage_ok
 ];
 
 $all_passed = !in_array(false, $reqs, true);
@@ -30,10 +58,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_install'])) {
     $db_pass = trim($_POST['db_pass'] ?? '');
 
     try {
-        $pdo = new PDO("mysql:host=$db_host;port=$db_port;charset=utf8mb4", $db_user, $db_pass, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-        ]);
-        $pdo->exec("CREATE DATABASE IF NOT EXISTS `$db_name` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        $options = [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_EMULATE_PREPARES => true
+        ];
+        if (defined('PDO::MYSQL_ATTR_MULTI_STATEMENTS')) {
+            $options[PDO::MYSQL_ATTR_MULTI_STATEMENTS] = true;
+        }
+
+        $pdo = new PDO("mysql:host=$db_host;port=$db_port;charset=utf8mb4", $db_user, $db_pass, $options);
+
+        // Attempt CREATE DATABASE; gracefully ignore if shared hosting user lacks CREATE DATABASE privilege
+        try {
+            $pdo->exec("CREATE DATABASE IF NOT EXISTS `$db_name` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        } catch (Exception $e) {
+            // Pre-created database on shared hosting
+        }
+
         $pdo->exec("USE `$db_name`");
 
         // Run schema
@@ -46,7 +87,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_install'])) {
             $pdo->exec($seed_sql);
         }
 
-        $success_msg = "Database tables and demonstration data created successfully!";
+        // Save database credentials to config/database.php
+        $config_file = __DIR__ . '/config/database.php';
+        if (file_exists($config_file)) {
+            $cfg = file_get_contents($config_file);
+            $cfg = preg_replace("/define\('DB_HOST',\s*'.*?'\);/", "define('DB_HOST', " . var_export($db_host, true) . ");", $cfg);
+            $cfg = preg_replace("/define\('DB_PORT',\s*'.*?'\);/", "define('DB_PORT', " . var_export($db_port, true) . ");", $cfg);
+            $cfg = preg_replace("/define\('DB_NAME',\s*'.*?'\);/", "define('DB_NAME', " . var_export($db_name, true) . ");", $cfg);
+            $cfg = preg_replace("/define\('DB_USER',\s*'.*?'\);/", "define('DB_USER', " . var_export($db_user, true) . ");", $cfg);
+            $cfg = preg_replace("/define\('DB_PASS',\s*'.*?'\);/", "define('DB_PASS', " . var_export($db_pass, true) . ");", $cfg);
+            @file_put_contents($config_file, $cfg);
+        }
+
+        $success_msg = "Database tables, default accounts, and store demonstration data created successfully!";
         $step = 'complete';
     } catch (Exception $e) {
         $errors[] = "Installation failed: " . $e->getMessage();
@@ -71,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_install'])) {
 <body>
 <div class="install-box">
     <div class="text-center mb-4">
-        <img src="assets/images/logo.svg" alt="MartPro Logo" height="48" class="mb-2">
+        <img src="assets/images/logo-dark.svg" alt="MartPro Logo" height="48" class="mb-2">
         <h4 class="fw-bold text-navy">System Installer & Health Check</h4>
     </div>
 
@@ -88,13 +141,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_install'])) {
             <i class="bi bi-check-circle-fill text-success fs-1 mb-2 d-block"></i>
             <h5 class="fw-bold">MartPro Installed Successfully!</h5>
             <p class="text-muted mb-3"><?= htmlspecialchars($success_msg) ?></p>
+            <div class="mb-3 small text-muted">
+                Default Super Admin Login: <strong>admin</strong> &bull; Password: <strong>admin123</strong>
+            </div>
             <a href="login.php" class="btn btn-primary px-4 py-2">
                 <i class="bi bi-box-arrow-in-right me-1"></i> Go to Sign In Screen
             </a>
         </div>
     <?php else: ?>
         <h6 class="fw-bold mb-3 text-secondary text-uppercase small">1. Server Environment Check</h6>
-        <div class="list-group mb-4">
+        <div class="list-group mb-3">
             <?php foreach ($reqs as $name => $ok): ?>
                 <div class="list-group-item d-flex justify-content-between align-items-center py-2">
                     <span class="small fw-semibold"><?= htmlspecialchars($name) ?></span>
@@ -106,6 +162,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_install'])) {
                 </div>
             <?php endforeach; ?>
         </div>
+
+        <?php if (!$storage_ok): ?>
+            <div class="alert alert-warning small mb-4">
+                <strong><i class="bi bi-exclamation-triangle me-1"></i> Storage directory is not writable.</strong><br>
+                To enable log exports and backup files, please grant write permissions to <code>storage/</code>:
+                <ul class="mb-1 mt-1 ps-3">
+                    <li>In <strong>FileZilla / FTP</strong>: Right-click <code>storage</code> folder &rarr; <em>File permissions...</em> &rarr; enter <code>777</code> &rarr; check <em>"Recurse into subdirectories"</em>.</li>
+                    <li>Via <strong>SSH Terminal</strong>: <code>chmod -R 777 storage/</code> or <code>chown -R www-data:www-data storage/</code></li>
+                </ul>
+            </div>
+        <?php endif; ?>
 
         <h6 class="fw-bold mb-3 text-secondary text-uppercase small">2. Database Configuration</h6>
         <form method="POST">
@@ -140,7 +207,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_install'])) {
                 </label>
             </div>
 
-            <button type="submit" name="run_install" class="btn btn-primary w-100 py-2 fw-semibold" <?= !$all_passed ? 'disabled' : '' ?>>
+            <button type="submit" name="run_install" class="btn btn-primary w-100 py-2 fw-semibold">
                 <i class="bi bi-database-check me-1"></i> Install / Reset MartPro Database
             </button>
         </form>
