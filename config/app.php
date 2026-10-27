@@ -41,8 +41,12 @@ if (strpos($base_path, '/modules') !== false) {
     $base_path = substr($base_path, 0, strpos($base_path, '/api'));
 } elseif (strpos($base_path, '/print') !== false) {
     $base_path = substr($base_path, 0, strpos($base_path, '/print'));
+} elseif (strpos($base_path, '/tests') !== false) {
+    $base_path = substr($base_path, 0, strpos($base_path, '/tests'));
 }
-define('BASE_URL', $protocol . $host . (empty($base_path) || $base_path === '/' ? '' : $base_path));
+$base_path = (empty($base_path) || $base_path === '/' || $base_path === '.') ? '' : $base_path;
+define('BASE_PATH', $base_path);
+define('BASE_URL', $protocol . $host . $base_path);
 
 // Environment Mode: 'production' or 'development'
 define('APP_ENV', 'development');

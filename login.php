@@ -13,7 +13,31 @@ if (is_logged_in()) {
 }
 
 $error_message = '';
-$redirect = $_GET['redirect'] ?? 'index.php';
+$raw_redirect = $_GET['redirect'] ?? '';
+
+// Sanitize redirect target:
+// 1. Prevent open redirects (e.g. //evil.com or http://evil.com)
+if (preg_match('#^(https?:)?//#i', $raw_redirect)) {
+    $raw_redirect = '';
+}
+
+// 2. Strip any leading BASE_PATH if present (e.g. /martpro/ or martpro/) to avoid duplicate prefixes
+if (defined('BASE_PATH') && !empty(BASE_PATH)) {
+    $clean_base = trim(BASE_PATH, '/');
+    while (preg_match('#^' . preg_quote($clean_base, '#') . '(/|$)#i', ltrim($raw_redirect, '/'))) {
+        $raw_redirect = preg_replace('#^' . preg_quote($clean_base, '#') . '(/|$)#i', '', ltrim($raw_redirect, '/'));
+    }
+}
+
+$clean_redirect = ltrim($raw_redirect, '/');
+$target_file = explode('?', $clean_redirect)[0];
+if (empty($target_file) || $target_file === 'index.php' || $target_file === 'login.php' || $target_file === 'logout.php') {
+    $redirect_url = BASE_URL . '/index.php';
+    $form_redirect_param = '';
+} else {
+    $redirect_url = BASE_URL . '/' . $clean_redirect;
+    $form_redirect_param = '?redirect=' . urlencode($clean_redirect);
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_csrf_token();
@@ -25,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $result = login($username, $password);
         if ($result['success']) {
-            header('Location: ' . BASE_URL . '/' . ltrim($redirect, '/'));
+            header('Location: ' . $redirect_url);
             exit;
         } else {
             $error_message = $result['message'];
@@ -86,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     <?php endif; ?>
 
-    <form method="POST" action="login.php<?= !empty($redirect) ? '?redirect=' . urlencode($redirect) : '' ?>">
+    <form method="POST" action="login.php<?= $form_redirect_param ?>">
         <?= csrf_token_field() ?>
 
         <div class="mb-3">

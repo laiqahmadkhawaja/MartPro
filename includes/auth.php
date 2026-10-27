@@ -58,8 +58,19 @@ function require_login(): void {
         if (is_ajax_request()) {
             json_error('Session expired. Please log in again.', [], 401);
         }
-        $redirect = urlencode($_SERVER['REQUEST_URI'] ?? 'index.php');
-        header('Location: ' . BASE_URL . '/login.php?redirect=' . $redirect);
+        $request_uri = $_SERVER['REQUEST_URI'] ?? '';
+        $relative_uri = $request_uri;
+        if (defined('BASE_PATH') && !empty(BASE_PATH) && stripos($relative_uri, BASE_PATH) === 0) {
+            $relative_uri = substr($relative_uri, strlen(BASE_PATH));
+        }
+        $relative_uri = ltrim($relative_uri, '/');
+
+        $target_clean = explode('?', $relative_uri)[0];
+        if (empty($target_clean) || $target_clean === 'index.php' || $target_clean === 'login.php' || $target_clean === 'logout.php') {
+            header('Location: ' . BASE_URL . '/login.php');
+        } else {
+            header('Location: ' . BASE_URL . '/login.php?redirect=' . urlencode($relative_uri));
+        }
         exit;
     }
 }
