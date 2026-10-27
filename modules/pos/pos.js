@@ -13,6 +13,36 @@ $(document).ready(function() {
     const $cartItemsList = $('#cart-items-list');
     const $cartEmptyMsg = $('#cart-empty-message');
 
+    function isWalkinCustomer(cust) {
+        if (!cust || !cust.id || cust.id == 1) return true;
+        const name = (cust.name || '').toLowerCase();
+        return name.includes('walk-in') || name.includes('walk in') || name.includes('guest');
+    }
+
+    function syncCustomerCreditState() {
+        const isWalkin = isWalkinCustomer(currentCustomer);
+        const $creditInput = $('#tender-credit');
+        const $hint = $('#credit-limit-hint');
+        const $resetBtn = $('#btn-reset-customer');
+
+        if (isWalkin) {
+            $creditInput.prop('disabled', true).val('').attr('placeholder', 'Disabled for Walk-in');
+            $hint.html('<span class="text-danger small"><i class="bi bi-shield-slash me-1"></i>Credit not allowed for Walk-in Customer. Select customer (F6).</span>');
+            $resetBtn.addClass('d-none');
+        } else {
+            const limit = parseFloat(currentCustomer.credit_limit || 0);
+            const balance = parseFloat(currentCustomer.current_balance || 0);
+            const avail = Math.max(0, limit - balance);
+            $creditInput.prop('disabled', false).attr('placeholder', '0.00');
+            if (limit <= 0) {
+                $hint.html(`<span class="text-danger small"><i class="bi bi-exclamation-octagon me-1"></i>Customer has no approved credit facility (Limit: ${fmt(0)}).</span>`);
+            } else {
+                $hint.html(`<span class="text-muted small">Available Khata: <strong class="text-success">${fmt(avail)}</strong> (Limit: ${fmt(limit)})</span>`);
+            }
+            $resetBtn.removeClass('d-none');
+        }
+    }
+
     // Customer Secondary Display Channel
     const displayChannel = window.BroadcastChannel ? new BroadcastChannel('martpro_pos_display') : null;
     function syncCustomerDisplay() {
@@ -265,17 +295,18 @@ $(document).ready(function() {
                 return;
             }
             res.data.forEach(c => {
+                const isWalkin = (c.id == 1 || (c.name || '').toLowerCase().includes('walk-in') || (c.name || '').toLowerCase().includes('guest'));
                 const itemHtml = `
                     <button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center select-cust-item"
                             data-id="${c.id}" data-name="${c.name}" data-phone="${c.phone}" data-tier="${c.membership_tier}"
                             data-limit="${c.credit_limit}" data-bal="${c.current_balance}" data-pts="${c.loyalty_points}">
                         <div>
-                            <div class="fw-bold text-navy">${c.name}</div>
+                            <div class="fw-bold text-navy">${c.name} ${isWalkin ? '<span class="badge bg-secondary ms-1">Walk-in (No Credit)</span>' : ''}</div>
                             <small class="text-muted"><i class="bi bi-telephone me-1"></i>${c.phone} | Tier: <span class="badge bg-secondary">${c.membership_tier}</span></small>
                         </div>
                         <div class="text-end">
                             <span class="badge bg-info-subtle text-info">${c.loyalty_points} Pts</span>
-                            <div class="small text-danger">Khata: ${fmt(c.current_balance)}</div>
+                            <div class="small ${isWalkin ? 'text-muted' : 'text-danger'}">${isWalkin ? 'Credit Disabled' : 'Khata: ' + fmt(c.current_balance)}</div>
                         </div>
                     </button>
                 `;
@@ -285,20 +316,36 @@ $(document).ready(function() {
     }
 
     $(document).on('click', '.select-cust-item', function() {
-        currentCustomer = {
-            id: $(this).data('id'),
-            name: $(this).data('name'),
-            phone: $(this).data('phone'),
-            tier: $(this).data('tier'),
-            credit_limit: parseFloat($(this).data('limit') || 0),
-            current_balance: parseFloat($(this).data('bal') || 0),
-            loyalty_points: parseInt($(this).data('pts') || 0)
-        };
-        $('#pos-customer-name').text(currentCustomer.name);
-        $('#pos-customer-details').text(`Phone: ${currentCustomer.phone} | Tier: ${currentCustomer.tier.toUpperCase()} | Points: ${currentCustomer.loyalty_points}`);
-        $('#credit-limit-hint').text(`Available Khata: ${fmt(currentCustomer.credit_limit - currentCustomer.current_balance)}`);
+        const custId = parseInt($(this).data('id'), 10);
+        if (custId === 1) {
+            currentCustomer = null;
+            $('#pos-customer-name').text('Walk-in Retail Customer');
+            $('#pos-customer-details').text('Guest Checkout');
+        } else {
+            currentCustomer = {
+                id: custId,
+                name: $(this).data('name'),
+                phone: $(this).data('phone'),
+                tier: $(this).data('tier') || 'standard',
+                credit_limit: parseFloat($(this).data('limit') || 0),
+                current_balance: parseFloat($(this).data('bal') || 0),
+                loyalty_points: parseInt($(this).data('pts') || 0)
+            };
+            $('#pos-customer-name').text(currentCustomer.name);
+            $('#pos-customer-details').text(`Phone: ${currentCustomer.phone} | Tier: ${currentCustomer.tier.toUpperCase()} | Points: ${currentCustomer.loyalty_points}`);
+        }
+        syncCustomerCreditState();
         $('#customerSelectModal').modal('hide');
         refocusBarcode();
+    });
+
+    // Reset customer back to Walk-in
+    $('#btn-reset-customer').on('click', function() {
+        currentCustomer = null;
+        $('#pos-customer-name').text('Walk-in Retail Customer');
+        $('#pos-customer-details').text('Guest Checkout');
+        syncCustomerCreditState();
+        MartPro.notify('info', 'Customer reset to Walk-in Retail Customer.');
     });
 
     // Quick Add Customer Form
@@ -312,7 +359,8 @@ $(document).ready(function() {
             MartPro.notify('success', 'Customer registered and selected!');
             currentCustomer = res.data;
             $('#pos-customer-name').text(currentCustomer.name);
-            $('#pos-customer-details').text(`Phone: ${currentCustomer.phone} | Tier: ${currentCustomer.membership_tier.toUpperCase()}`);
+            $('#pos-customer-details').text(`Phone: ${currentCustomer.phone} | Tier: ${(currentCustomer.membership_tier || 'standard').toUpperCase()}`);
+            syncCustomerCreditState();
             $('#addCustomerModal').modal('hide');
             refocusBarcode();
         });
@@ -329,6 +377,7 @@ $(document).ready(function() {
         $('#tender-cash').val(grandTotal.toFixed(2));
         $('#tender-card').val('');
         $('#tender-credit').val('');
+        syncCustomerCreditState();
         calcModalChange();
         $('#paymentModal').modal('show');
     });
@@ -378,6 +427,13 @@ $(document).ready(function() {
         const credit = parseFloat($('#tender-credit').val() || 0);
         const cardRef = $.trim($('#tender-card-ref').val());
 
+        if (credit > 0 && isWalkinCustomer(currentCustomer)) {
+            MartPro.notify('error', 'Credit (Khata) sales cannot be saved for Walk-in Customer. Please select or register a valid customer account.');
+            $('#tender-credit').val('').focus();
+            calcModalChange();
+            return;
+        }
+
         submitCheckout({
             paid_cash: cash,
             paid_card: card,
@@ -388,6 +444,11 @@ $(document).ready(function() {
 
     // Execute Authoritative Checkout Submission
     function submitCheckout(paymentData, btnEl) {
+        if (paymentData.paid_credit > 0 && isWalkinCustomer(currentCustomer)) {
+            MartPro.notify('error', 'Credit (Khata) sales cannot be saved for Walk-in Customer. Please select or register a valid customer account.');
+            return;
+        }
+
         const payload = Object.assign({
             cart: JSON.stringify(cart),
             customer_id: currentCustomer ? currentCustomer.id : null,
@@ -414,6 +475,7 @@ $(document).ready(function() {
             currentCustomer = null;
             $('#pos-customer-name').text('Walk-in Retail Customer');
             $('#pos-customer-details').text('Guest Checkout');
+            syncCustomerCreditState();
             renderCart();
             refocusBarcode();
         });
@@ -580,4 +642,7 @@ $(document).ready(function() {
         $('#searchProductModal').modal('hide');
         refocusBarcode();
     });
+
+    // Initialize credit UI state for default Walk-in Customer
+    syncCustomerCreditState();
 });

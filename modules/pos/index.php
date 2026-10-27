@@ -146,6 +146,9 @@ require_once __DIR__ . '/../../includes/header.php';
                         </div>
                     </div>
                     <div class="d-flex gap-1">
+                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2 d-none" id="btn-reset-customer" title="Reset to Walk-in Customer">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
                         <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2" data-bs-toggle="modal" data-bs-target="#customerSelectModal" title="Select Customer (F6)">
                             <i class="bi bi-people"></i> Select
                         </button>
@@ -255,8 +258,8 @@ require_once __DIR__ . '/../../includes/header.php';
 
                 <div class="mb-3" id="credit-khata-block">
                     <label class="form-label fw-semibold small text-navy"><i class="bi bi-journal-text me-1 text-warning"></i> Customer Credit (Khata)</label>
-                    <input type="number" step="0.01" class="form-control tender-input" id="tender-credit" placeholder="0.00">
-                    <small class="text-muted" id="credit-limit-hint">Available Limit: Select customer first</small>
+                    <input type="number" step="0.01" class="form-control tender-input" id="tender-credit" placeholder="Disabled for Walk-in" disabled>
+                    <small class="text-danger small" id="credit-limit-hint"><i class="bi bi-shield-slash me-1"></i>Credit not allowed for Walk-in Customer. Select customer (F6).</small>
                 </div>
 
                 <!-- Change Due Box -->

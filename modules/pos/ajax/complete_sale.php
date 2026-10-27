@@ -48,20 +48,30 @@ $card_ref = trim($_POST['card_reference'] ?? '');
 
 // Check Customer Credit Limit if customer credit is used
 if ($paid_credit > 0) {
-    if (!$customer_id) {
-        json_error('Customer selection is required for store credit / Khata purchases.');
+    if (empty($customer_id) || $customer_id === 1) {
+        json_error('Credit (Khata) sales cannot be saved for Walk-in Customer. Please select or register a valid customer account.');
     }
-    $c_stmt = $db->prepare("SELECT credit_limit, current_balance, name FROM customers WHERE id = :id LIMIT 1");
+    $c_stmt = $db->prepare("SELECT id, credit_limit, current_balance, name FROM customers WHERE id = :id LIMIT 1");
     $c_stmt->execute(['id' => $customer_id]);
     $cust = $c_stmt->fetch();
     if (!$cust) {
         json_error('Selected customer account not found.');
     }
-    $new_balance = (float)$cust['current_balance'] + $paid_credit;
-    if ((float)$cust['credit_limit'] > 0 && $new_balance > (float)$cust['credit_limit']) {
+    // Walk-in / Guest check by name or ID
+    if (stripos($cust['name'], 'walk-in') !== false || stripos($cust['name'], 'walk in') !== false || stripos($cust['name'], 'guest') !== false) {
+        json_error('Credit (Khata) sales cannot be saved for Walk-in Customer. Please select or register a valid customer account.');
+    }
+    $credit_limit = (float)$cust['credit_limit'];
+    $current_balance = (float)$cust['current_balance'];
+    $new_balance = $current_balance + $paid_credit;
+
+    if ($credit_limit <= 0) {
+        json_error(sprintf("Customer '%s' does not have an approved credit facility (Credit limit is Rs. 0.00).", $cust['name']));
+    }
+    if ($new_balance > $credit_limit) {
         json_error(sprintf(
             "Customer credit limit exceeded! Available credit: %s, Requested: %s",
-            format_money((float)$cust['credit_limit'] - (float)$cust['current_balance']),
+            format_money(max(0.0, $credit_limit - $current_balance)),
             format_money($paid_credit)
         ));
     }
