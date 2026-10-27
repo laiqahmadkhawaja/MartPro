@@ -1,6 +1,12 @@
 <?php
 /**
  * MartPro Thermal Receipt Printing Template (58mm / 80mm)
+ * Optimized for Thermal Direct Heads:
+ * - Monoline Sans-Serif (Arial / Segoe UI / Helvetica)
+ * - Uniform Bold Weight (700)
+ * - Pure #000000 Black (No Grays / No Colors)
+ * - Anti-Aliasing Fringe Suppression
+ * - Exact Printable Roll Widths (48mm for 58mm, 72mm for 80mm)
  */
 
 define('MARTPRO_INIT', true);
@@ -54,27 +60,69 @@ $is_58 = ($paper_width === '58mm');
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/print.css">
     <style>
+        * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: geometricPrecision;
+            box-sizing: border-box;
+        }
         body {
             background-color: #F1F5F9;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: Arial, "Helvetica Neue", Helvetica, "Segoe UI", Tahoma, sans-serif;
+            font-weight: 700;
+            color: #000000;
             padding: 20px;
         }
         .receipt-card {
             background: #FFFFFF;
             margin: 0 auto;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            padding: 16px;
-            border-radius: 6px;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: Arial, "Helvetica Neue", Helvetica, "Segoe UI", Tahoma, sans-serif;
+            font-weight: 700;
+            color: #000000;
         }
-        .width-80mm { width: 330px; }
-        .width-58mm { width: 260px; font-size: 11px; }
-        .dashed-line { border-top: 1px dashed #333; margin: 8px 0; }
-        .barcode-box {
-            font-family: 'Libre Barcode 39', monospace, sans-serif;
-            font-size: 32px;
-            letter-spacing: 2px;
-            text-align: center;
+        .receipt-card, .receipt-card * {
+            color: #000000 !important;
+            font-weight: 700 !important;
         }
+        /* Exact printable widths */
+        .width-80mm {
+            width: 72mm;
+            max-width: 72mm;
+            font-size: 12px;
+            line-height: 1.25;
+        }
+        .width-58mm {
+            width: 48mm;
+            max-width: 48mm;
+            font-size: 10px;
+            line-height: 1.2;
+        }
+        .dashed-line {
+            border-top: 1px dashed #000000 !important;
+            margin: 6px 0;
+        }
+        .receipt-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: inherit;
+        }
+        .receipt-table th, .receipt-table td {
+            padding: 2px 0;
+            vertical-align: top;
+        }
+        /* Hierarchy via font size only */
+        .receipt-brand { font-size: 18px; line-height: 1.2; }
+        .receipt-store { font-size: 14px; line-height: 1.2; }
+        .receipt-grand-total { font-size: 15px; }
+        .receipt-micro { font-size: 9px; line-height: 1.15; }
+
+        .width-58mm .receipt-brand { font-size: 15px; }
+        .width-58mm .receipt-store { font-size: 12px; }
+        .width-58mm .receipt-grand-total { font-size: 13px; }
+        .width-58mm .receipt-micro { font-size: 8px; }
     </style>
 </head>
 <body>
@@ -87,22 +135,22 @@ $is_58 = ($paper_width === '58mm');
 <div class="receipt-card <?= $is_58 ? 'width-58mm receipt-container-58mm' : 'width-80mm receipt-container-80mm' ?>">
     <!-- Header -->
     <div class="receipt-header text-center">
-        <h4 class="fw-bold mb-1" style="font-family: sans-serif;">Mart<span style="color:#16A34A;">Pro</span></h4>
-        <div class="fw-bold"><?= htmlspecialchars($sale['store_name']) ?></div>
-        <div class="small"><?= nl2br(htmlspecialchars($sale['receipt_header'] ?? $sale['store_address'])) ?></div>
-        <div class="small">Tel: <?= htmlspecialchars($sale['store_phone']) ?></div>
+        <div class="receipt-brand mb-1">MartPro</div>
+        <div class="receipt-store"><?= htmlspecialchars($sale['store_name']) ?></div>
+        <div class="receipt-micro"><?= nl2br(htmlspecialchars($sale['receipt_header'] ?? $sale['store_address'])) ?></div>
+        <div class="receipt-micro">Tel: <?= htmlspecialchars($sale['store_phone']) ?></div>
     </div>
 
     <div class="dashed-line"></div>
 
     <!-- Metadata -->
-    <table class="receipt-table small">
-        <tr><td><strong>Invoice #:</strong></td><td class="text-end fw-bold"><?= htmlspecialchars($sale['invoice_number']) ?></td></tr>
-        <tr><td><strong>Date:</strong></td><td class="text-end"><?= format_datetime($sale['sale_date']) ?></td></tr>
-        <tr><td><strong>Register:</strong></td><td class="text-end"><?= htmlspecialchars($sale['register_name']) ?></td></tr>
-        <tr><td><strong>Cashier:</strong></td><td class="text-end"><?= htmlspecialchars($sale['cashier_name']) ?></td></tr>
+    <table class="receipt-table">
+        <tr><td>Invoice #:</td><td class="text-end"><?= htmlspecialchars($sale['invoice_number']) ?></td></tr>
+        <tr><td>Date:</td><td class="text-end"><?= format_datetime($sale['sale_date']) ?></td></tr>
+        <tr><td>Register:</td><td class="text-end"><?= htmlspecialchars($sale['register_name']) ?></td></tr>
+        <tr><td>Cashier:</td><td class="text-end"><?= htmlspecialchars($sale['cashier_name']) ?></td></tr>
         <?php if (!empty($sale['customer_name'])): ?>
-            <tr><td><strong>Customer:</strong></td><td class="text-end"><?= htmlspecialchars($sale['customer_name']) ?></td></tr>
+            <tr><td>Customer:</td><td class="text-end"><?= htmlspecialchars($sale['customer_name']) ?></td></tr>
         <?php endif; ?>
     </table>
 
@@ -111,7 +159,7 @@ $is_58 = ($paper_width === '58mm');
     <!-- Line Items Table -->
     <table class="receipt-table">
         <thead>
-            <tr style="border-bottom: 1px solid #000;">
+            <tr style="border-bottom: 1px solid #000000;">
                 <th style="width: 50%;">Item</th>
                 <th class="text-center" style="width: 15%;">Qty</th>
                 <th class="text-end" style="width: 15%;">Price</th>
@@ -122,12 +170,12 @@ $is_58 = ($paper_width === '58mm');
             <?php foreach ($items as $item): ?>
                 <tr>
                     <td>
-                        <div class="fw-bold"><?= htmlspecialchars($item['product_name']) ?></div>
-                        <small style="color: #666;"><?= htmlspecialchars($item['sku']) ?></small>
+                        <div><?= htmlspecialchars($item['product_name']) ?></div>
+                        <div class="receipt-micro"><?= htmlspecialchars($item['sku']) ?></div>
                     </td>
                     <td class="text-center align-top"><?= format_qty($item['quantity']) ?></td>
                     <td class="text-end align-top"><?= number_format((float)$item['unit_price'], 2) ?></td>
-                    <td class="text-end align-top fw-bold"><?= number_format((float)$item['line_total'], 2) ?></td>
+                    <td class="text-end align-top"><?= number_format((float)$item['line_total'], 2) ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
@@ -136,45 +184,45 @@ $is_58 = ($paper_width === '58mm');
     <div class="dashed-line"></div>
 
     <!-- Financial Breakdown -->
-    <table class="receipt-table small">
+    <table class="receipt-table">
         <tr>
             <td>Subtotal:</td>
-            <td class="text-end fw-bold"><?= format_money($sale['subtotal']) ?></td>
+            <td class="text-end"><?= format_money($sale['subtotal']) ?></td>
         </tr>
         <?php if ($sale['item_discount_total'] > 0 || $sale['bill_discount_total'] > 0): ?>
             <tr>
                 <td>Total Discounts:</td>
-                <td class="text-end text-danger">-<?= format_money($sale['item_discount_total'] + $sale['bill_discount_total']) ?></td>
+                <td class="text-end">-<?= format_money($sale['item_discount_total'] + $sale['bill_discount_total']) ?></td>
             </tr>
         <?php endif; ?>
         <tr>
             <td>Sales Tax:</td>
             <td class="text-end"><?= format_money($sale['tax_total']) ?></td>
         </tr>
-        <tr class="fw-bold fs-6" style="border-top: 1px solid #000; border-bottom: 1px solid #000;">
+        <tr class="receipt-grand-total" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000;">
             <td class="py-1">GRAND TOTAL:</td>
             <td class="text-end py-1"><?= format_money($sale['grand_total']) ?></td>
         </tr>
     </table>
 
     <!-- Payment Tenders -->
-    <table class="receipt-table small mt-2">
+    <table class="receipt-table mt-1">
         <?php foreach ($payments as $p): ?>
             <tr>
                 <td>Paid by <?= strtoupper(str_replace('_', ' ', $p['payment_method'])) ?>:</td>
-                <td class="text-end fw-bold"><?= format_money($p['amount']) ?></td>
+                <td class="text-end"><?= format_money($p['amount']) ?></td>
             </tr>
         <?php endforeach; ?>
         <?php if ($sale['change_due'] > 0): ?>
             <tr>
                 <td>Change Returned:</td>
-                <td class="text-end fw-bold"><?= format_money($sale['change_due']) ?></td>
+                <td class="text-end"><?= format_money($sale['change_due']) ?></td>
             </tr>
         <?php endif; ?>
         <?php if ($sale['customer_credit_amount'] > 0): ?>
             <tr>
-                <td>Khata Credit Balance Owed:</td>
-                <td class="text-end text-danger fw-bold"><?= format_money($sale['customer_credit_amount']) ?></td>
+                <td>Khata Credit Balance:</td>
+                <td class="text-end"><?= format_money($sale['customer_credit_amount']) ?></td>
             </tr>
         <?php endif; ?>
     </table>
@@ -183,22 +231,22 @@ $is_58 = ($paper_width === '58mm');
 
     <!-- Customer Loyalty Info -->
     <?php if (!empty($sale['customer_id'])): ?>
-        <div class="text-center small mb-2">
-            <div>Member Loyalty Points Balance: <strong><?= (int)$sale['loyalty_points'] ?> pts</strong></div>
+        <div class="text-center mb-1">
+            <div>Member Loyalty Points: <?= (int)$sale['loyalty_points'] ?> pts</div>
         </div>
         <div class="dashed-line"></div>
     <?php endif; ?>
 
     <!-- Barcode for return scanning -->
     <div class="text-center my-2">
-        <div class="fw-bold" style="letter-spacing: 3px; font-size: 14px;">*<?= htmlspecialchars($sale['invoice_number']) ?>*</div>
-        <small style="font-size: 9px; color: #777;">Scan barcode for returns or inquiry</small>
+        <div style="letter-spacing: 3px; font-size: 13px;">*<?= htmlspecialchars($sale['invoice_number']) ?>*</div>
+        <div class="receipt-micro">Scan barcode for returns or inquiry</div>
     </div>
 
     <!-- Footer -->
-    <div class="receipt-footer text-center small text-muted">
-        <div><?= nl2br(htmlspecialchars($sale['receipt_footer'])) ?></div>
-        <div class="mt-1" style="font-size: 9px;">Powered by MartPro Enterprise Retail POS</div>
+    <div class="receipt-footer text-center">
+        <div class="receipt-micro"><?= nl2br(htmlspecialchars($sale['receipt_footer'])) ?></div>
+        <div class="receipt-micro mt-1">Powered by MartPro Enterprise Retail POS</div>
     </div>
 </div>
 

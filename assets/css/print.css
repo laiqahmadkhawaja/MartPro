@@ -1,13 +1,40 @@
 /**
  * MartPro Print Stylesheet
  * Optimized for Thermal Receipt Printers (58mm / 80mm) & Standard Reports
+ *
+ * Thermal Optimization Rules:
+ * 1. Monoline Sans-Serif Font Stack
+ * 2. Uniform Bold Weight (700) for clean 2-3px thermal burn
+ * 3. Hierarchy via font size only
+ * 4. Pure #000000 Black (no gray dithering)
+ * 5. Anti-aliasing fringe suppression
+ * 6. Exact printable roll widths: 48mm (58mm roll) & 72mm (80mm roll)
  */
 
+@page {
+  margin: 0;
+  size: auto;
+}
+
 @media print {
+  *, *::before, *::after {
+    color: #000000 !important;
+    font-weight: 700 !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    text-rendering: geometricPrecision !important;
+  }
+
   body {
     background: #FFFFFF !important;
     color: #000000 !important;
-    font-family: 'Courier New', Courier, monospace, sans-serif !important;
+    font-family: Arial, "Helvetica Neue", Helvetica, "Segoe UI", Tahoma, sans-serif !important;
+    font-weight: 700 !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    text-rendering: geometricPrecision !important;
     margin: 0 !important;
     padding: 0 !important;
   }
@@ -23,43 +50,72 @@
     width: 100% !important;
   }
 
-  /* 80mm Thermal Receipt Spec */
+  /* 80mm Thermal Receipt Spec (72mm exact printable width) */
   .receipt-container-80mm {
-    width: 76mm;
-    max-width: 76mm;
-    margin: 0 auto;
-    padding: 4px;
+    width: 72mm !important;
+    max-width: 72mm !important;
+    min-width: 72mm !important;
+    margin: 0 auto !important;
+    padding: 2mm 0 !important;
     font-size: 12px;
     line-height: 1.25;
   }
 
-  /* 58mm Thermal Receipt Spec */
+  /* 58mm Thermal Receipt Spec (48mm exact printable width) */
   .receipt-container-58mm {
-    width: 52mm;
-    max-width: 52mm;
-    margin: 0 auto;
-    padding: 2px;
-    font-size: 10.5px;
+    width: 48mm !important;
+    max-width: 48mm !important;
+    min-width: 48mm !important;
+    margin: 0 auto !important;
+    padding: 1mm 0 !important;
+    font-size: 10px;
     line-height: 1.2;
+  }
+
+  .receipt-card {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    background: transparent !important;
+    width: 100% !important;
   }
 
   .receipt-header, .receipt-footer {
     text-align: center;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
   }
 
-  .receipt-divider {
-    border-top: 1px dashed #000000;
-    margin: 6px 0;
+  .receipt-divider, .dashed-line {
+    border-top: 1px dashed #000000 !important;
+    border-bottom: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    margin: 4px 0 !important;
   }
 
   .receipt-table {
     width: 100%;
     border-collapse: collapse;
   }
+
   .receipt-table th, .receipt-table td {
     padding: 2px 0;
+    color: #000000 !important;
+    font-weight: 700 !important;
   }
+
+  /* Font size hierarchy for 80mm */
+  .receipt-container-80mm .receipt-brand { font-size: 18px !important; line-height: 1.2; }
+  .receipt-container-80mm .receipt-store { font-size: 14px !important; line-height: 1.2; }
+  .receipt-container-80mm .receipt-grand-total { font-size: 15px !important; }
+  .receipt-container-80mm .receipt-micro { font-size: 9px !important; line-height: 1.15; }
+
+  /* Font size hierarchy for 58mm */
+  .receipt-container-58mm .receipt-brand { font-size: 15px !important; line-height: 1.2; }
+  .receipt-container-58mm .receipt-store { font-size: 12px !important; line-height: 1.2; }
+  .receipt-container-58mm .receipt-grand-total { font-size: 13px !important; }
+  .receipt-container-58mm .receipt-micro { font-size: 8px !important; line-height: 1.15; }
 
   .text-end {
     text-align: right !important;
@@ -68,6 +124,6 @@
     text-align: center !important;
   }
   .fw-bold {
-    font-weight: bold !important;
+    font-weight: 700 !important;
   }
 }
